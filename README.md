@@ -1,7 +1,5 @@
 ## iScript
 
-包含项目:
-
 > *[L]* *[W]* *[LW]* 分别表示，在linux, windows, linux和windows 下通过测试。
 
 > ***windows用户可在babun (https://github.com/babun/babun) 下运行。***
@@ -312,6 +310,10 @@
         # 非空文件夹
         l path1 path2 -t ne,d
 
+        # 分享文件
+        S 或 share path1 path2 .. 为每个提供的文件路劲创建分享链接
+        S 或 share [-P pawd 或 --passwd pawd] path1 path2 .. 为每个提供的路径创建加密的分享链接
+
         # 查看文件占用空间
         du path1 path2 ..               文件夹下所有*文件(不包含下层文件夹)*总大小
         du path1 path2 .. -R            文件夹下所有*文件(包含下层文件夹)*总大小
@@ -568,11 +570,13 @@
 
     magnet 和 torrent 的相互转换
 
-    ~~过滤敏.感.词功能用于净网时期的 baidu, xunlei~~
+    过滤敏.感.词功能用于净网时期的 baidu, xunlei
 
-    **8.30日后，无法使用。 见 http://tieba.baidu.com/p/3265467666**
+    ~~8.30日后，无法使用。 见 http://tieba.baidu.com/p/3265467666~~
 
-    ~~**!! 注意：过滤后生成的torrent在百度网盘只能用一次，如果需要再次使用，则需用 -n 改顶层目录名**~~
+    [**百度云疑似解封，百度网盘内八秒视频部分恢复**](http://fuli.ba/baiduyunhuifuguankan.html)
+
+    **!! 注意：过滤后生成的torrent在百度网盘只能用一次，如果需要再次使用，则需用 -n 改顶层目录名**
 
     磁力连接转种子，用的是
 
@@ -1079,6 +1083,8 @@
 3. 用法
 
     \# pn 是91porn.py的马甲 (alias pn='python2 /path/to/91porn.py')
+
+    下载：
 
         pn url # 91porn.com(或其镜像) 视频的url
 

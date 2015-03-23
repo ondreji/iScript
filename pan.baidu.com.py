@@ -1670,6 +1670,7 @@ class panbaiducom_HOME(object):
                     if not warn('play', display=True): return
                     paths = [i['path'].encode('utf8') for i in infos]
                     self._download_do = self._play_do
+                    args.play = True
                     self.download(paths)
                 elif comd == 'rnr' or comd == 'rnre':
                     if len(pipe) < 3:
@@ -1718,7 +1719,7 @@ class panbaiducom_HOME(object):
 
     def _ls_display(self, infos, dir_=None):
         if dir_:
-            print dir_ + ':'
+            print (dir_ + ':').encode('utf8')
             for info in infos:
                 self._find_display(info)
             print ''
@@ -1746,9 +1747,9 @@ class panbaiducom_HOME(object):
                 directorys[y:y] = subdirs
                 y += 1
 
-        if args.type_ == 'du': print 'd', s % (
-            1, 91, sizeof_fmt(sum_size)
-        ), sum_size, directorys[0]
+        if args.type_ == 'du':
+            print 'd', s % ( 1, 91, sizeof_fmt(sum_size)), \
+                sum_size, directorys[0]
 
     def ls(self, order, desc, paths):
         for path in paths:
@@ -2436,6 +2437,75 @@ class panbaiducom_HOME(object):
             else:
                 print s % (1, 91, '  !! Error: file exists.'), path
 
+
+    ############################################################
+    # for share
+    def _share(self, paths, pwd=None):
+        """
+        创建一个文件的分享链接
+        :param fs_ids: 要分享的文件fid列表
+        :type fs_ids: list
+        :param pwd: 分享密码，没有则没有密码
+        :type pwd: str
+        :return: requests.Response 对象
+            .. note::
+                返回正确
+                    {
+                        "errno": 0,
+                        "request_id": 请求识别号,
+                        "shareid": 分享识别号,
+                        "link": "分享地址",
+                        "shorturl": "段网址",
+                        "ctime": 创建时间,
+                        "premis": false
+                    }
+        """
+        meta = self._meta(paths)
+        fs_ids = [i['fs_id'] for i in meta['info']]
+
+        params = {
+            'app_id': 250528,
+            'channel': 'chunlei',
+            'clienttype': 0,
+            'web': 1,
+            'bdstoken': self._get_bdstoken(),
+        }
+
+        if pwd:
+            data = {
+                'fid_list': json.dumps(fs_ids),
+                'schannel': 4,
+                'channel_list': '[]',
+                'pwd': pwd,
+            }
+        else:
+            data = {
+                'fid_list': json.dumps(fs_ids),
+                'schannel': 0,
+                'channel_list': '[]'
+            }
+
+        url = 'http://pan.baidu.com/share/set'
+        r = ss.post(url, params=params, data=data)
+        j = r.json()
+
+        if j['errno'] != 0:
+            print s % (1, 91, '  !! Error at _share'), j
+            sys.exit(1)
+        else:
+            print '\n 链接地址:', s % (1, 92, j.get('shorturl').encode('utf8'))
+            if pwd: print '     密码:', s % (1, 91, pwd)
+            #if 0 == meta['info'][0]['isdir']:
+                #print 'MD5:%s' % (meta['info'][0]['md5'])
+            return ENoError
+
+    def share(self, paths, pwd):
+        for path in paths:
+            path = [path]
+            self._share(path, pwd)
+
+
+
 class panbaiducom(object):
     @staticmethod
     def get_web_fileinfo(cm, url):
@@ -2616,6 +2686,8 @@ def main(argv):
         help='类型参数，eg: ls -t f (文件(f)、文件夹(d))')
     p.add_argument('-l', '--limit', action='store', \
         default=None, type=str, help='下载速度限制，eg: -l 100k')
+    p.add_argument('-P', '--passwd', action='store', \
+        default=None, type=str, help='设置分享密码，eg: -P pawd')
     # for upload
     p.add_argument('-m', '--uploadmode', action='store', \
         default='c', type=str, choices=['o', 'c'], \
@@ -2726,6 +2798,32 @@ def main(argv):
         px = panbaiducom_HOME()
         px.init()
         px.upload(xxx[:-1], xxx[-1])
+
+    elif comd == 'S' or comd == 'share':
+        if len(xxx) < 1:
+            print s % (1,91, ' !! S path1 path2 \n share path1 path2 \n ..')
+            sys.exit(1)
+
+        pwd = args.passwd
+        if pwd:
+            if not re.match(r'^[a-z0-9]{4}$', pwd):
+                from string import lowercase, digits
+                print s % (1, 91, '  !! passwd is wrong and will be randomly choiced.' \
+                           '\n  passwd is 4 symbols and choiced from %s%s' \
+                           % (lowercase, digits))
+                pwd = ''.join(random.sample(lowercase + digits, 4))
+
+        paths = xxx
+        paths1 = []
+        for path in paths:
+            if path[0] == '/':
+                paths1.append(path)
+            else:
+                print s % (2, 91, '  !!! url 路径不正确.'), path
+        if paths1:
+            x = panbaiducom_HOME()
+            x.init()
+            x.share(paths1, pwd)
 
     elif comd == 'd' or comd == 'download' \
         or comd == 'p' or comd == 'play':
